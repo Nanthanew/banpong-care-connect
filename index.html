@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banpong Care Connect - ระบบบันทึกและติดตามการเยี่ยมบ้าน</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Sarabun', sans-serif; }
+    .badge-adl-social { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-adl-home { background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
+    .badge-adl-bed { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .tab-active { border-bottom: 3px solid #0d9488; color: #0f766e; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-teal-700 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <div class="bg-white p-2 rounded-xl text-teal-700 shadow-sm">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold leading-tight">Banpong Care Connect</h1>
+            <p class="text-xs text-teal-100">ระบบบันทึกและติดตามการเยี่ยมบ้าน อำเภอบ้านโป่ง</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <div id="cloud-status-badge" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-teal-800/80 border border-teal-600 rounded-full text-xs text-teal-100">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="cloud-status-text">พร้อมใช้งาน (Firebase/Local)</span>
+          </div>
+          <button id="btn-quick-new-patient" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center shadow-sm">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            เพิ่มผู้ป่วย
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex space-x-8 border-t border-teal-600/50 text-sm overflow-x-auto">
+        <button id="nav-dashboard" class="py-3 px-1 border-b-2 font-medium tab-active transition whitespace-nowrap text-white flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          แดชบอร์ด & รายชื่อผู้ป่วย
+        </button>
+        <button id="nav-visit" class="py-3 px-1 border-b-2 border-transparent font-medium text-teal-100 hover:text-white transition whitespace-nowrap flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          บันทึกการเยี่ยมบ้าน (พร้อม 3 รูป)
+        </button>
+        <button id="nav-stats" class="py-3 px-1 border-b-2 border-transparent font-medium text-teal-100 hover:text-white transition whitespace-nowrap flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          รายงานและสถิติ (Export)
+        </button>
+        <button id="nav-schema" class="py-3 px-1 border-b-2 border-transparent font-medium text-teal-100 hover:text-white transition whitespace-nowrap flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16m-5 4h.01M9 11h.01M9 15h.01M15 15h.01" />
+          </svg>
+          โครงสร้างฐานข้อมูล & ตั้งค่า
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- TAB 1: DASHBOARD & PATIENT LIST -->
+    <section id="view-dashboard" class="space-y-6">
+      <!-- Quick Stats Top Bar -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">ผู้ป่วยทั้งหมด</p>
+            <p id="stat-total-patients" class="text-2xl font-bold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">เยี่ยมบ้านสะสม</p>
+            <p id="stat-total-visits" class="text-2xl font-bold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">ติดเตียง / เฝ้าระวัง</p>
+            <p id="stat-bedridden-count" class="text-2xl font-bold text-rose-600">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">บันทึกมีภาพถ่าย</p>
+            <p id="stat-visits-with-photos" class="text-2xl font-bold text-blue-600">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="flex-1 flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input type="text" id="filter-search" placeholder="ค้นหาชื่อผู้ป่วย, เลขบัตร หรือหมู่บ้าน..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <select id="filter-adl" class="text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            <option value="ALL">ทุกกลุ่มศักยภาพ (ADL)</option>
+            <option value="ติดสังคม">ติดสังคม (ADL 12-20)</option>
+            <option value="ติดบ้าน">ติดบ้าน (ADL 5-11)</option>
+            <option value="ติดเตียง">ติดเตียง (ADL 0-4)</option>
+          </select>
+          <select id="filter-village" class="text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            <option value="ALL">ทุกหมู่บ้าน/ชุมชน</option>
+            <option value="หมู่ 1 บ้านโป่ง">หมู่ 1 บ้านโป่ง</option>
+            <option value="หมู่ 2 ท่าผา">หมู่ 2 ท่าผา</option>
+            <option value="หมู่ 3 หนองอ้อ">หมู่ 3 หนองอ้อ</option>
+            <option value="หมู่ 4 เบิกไพร">หมู่ 4 เบิกไพร</option>
+            <option value="หมู่ 5 ปากแรต">หมู่ 5 ปากแรต</option>
+          </select>
+        </div>
+
+        <button id="btn-open-patient-modal" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center shrink-0 shadow-sm">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+          ลงทะเบียนผู้ป่วยใหม่
+        </button>
+      </div>
+
+      <!-- Patient Cards Grid -->
+      <div id="patient-card-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+    </section>
+
+    <!-- TAB 2: VISIT LOG FORM (WITH 3 IMAGE SLOTS) -->
+    <section id="view-visit-form" class="hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-teal-700 text-white px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-bold">บันทึกการเยี่ยมบ้านผู้ป่วย</h2>
+            <p class="text-xs text-teal-100">บันทึกผลการตรวจ อาการ สัญญาณชีพ และถ่ายภาพประกอบ 2-3 ภาพ</p>
+          </div>
+          <span class="text-xs bg-teal-800/80 px-3 py-1 rounded-full border border-teal-500/50">แบบฟอร์มการเยี่ยม</span>
+        </div>
+
+        <form id="form-visit-record" class="p-6 space-y-6" onsubmit="return false">
+          <!-- Patient Selection & Visit Date -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2">
+              <label for="visit-patient-select" class="block text-sm font-semibold text-slate-700 mb-1">
+                เลือกผู้ป่วยที่ได้รับการเยี่ยม <span class="text-rose-500">*</span>
+              </label>
+              <select id="visit-patient-select" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                <option value="">-- กรุณาเลือกผู้ป่วย --</option>
+              </select>
+            </div>
+            <div>
+              <label for="visit-date" class="block text-sm font-semibold text-slate-700 mb-1">
+                วันที่และเวลาเยี่ยม <span class="text-rose-500">*</span>
+              </label>
+              <input type="datetime-local" id="visit-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Staff & Vital Signs -->
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+            <div class="font-semibold text-sm text-slate-800 flex items-center">
+              <svg class="w-4 h-4 mr-1.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              ข้อมูลผู้ตรวจเยี่ยม และสัญญาณชีพ (Vital Signs)
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label for="visit-visitor-name" class="block text-xs font-medium text-slate-600 mb-1">ชื่อผู้เยี่ยม / อสม.</label>
+                <input type="text" id="visit-visitor-name" placeholder="เช่น อสม. สมศรี / พยาบาลวิชาชีพ" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              </div>
+              <div>
+                <label for="visit-bp" class="block text-xs font-medium text-slate-600 mb-1">ความดันโลหิต (มม.ปรอท)</label>
+                <input type="text" id="visit-bp" placeholder="เช่น 120/80" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              </div>
+              <div>
+                <label for="visit-pulse" class="block text-xs font-medium text-slate-600 mb-1">ชีพจร (ครั้ง/นาที)</label>
+                <input type="number" id="visit-pulse" placeholder="เช่น 78" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              </div>
+              <div>
+                <label for="visit-dtx" class="block text-xs font-medium text-slate-600 mb-1">ระดับน้ำตาล DTX (mg/dL)</label>
+                <input type="number" id="visit-dtx" placeholder="เช่น 115" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <div>
+                <label for="visit-adl" class="block text-xs font-medium text-slate-600 mb-1">การประเมินศักยภาพรอบนี้ (ADL)</label>
+                <select id="visit-adl" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                  <option value="ติดสังคม">ติดสังคม (ADL 12-20) - ช่วยเหลือตนเองได้ดี</option>
+                  <option value="ติดบ้าน">ติดบ้าน (ADL 5-11) - ต้องการความช่วยเหลือบางส่วน</option>
+                  <option value="ติดเตียง">ติดเตียง (ADL 0-4) - ต้องพึ่งพาผู้อื่นเต็มที่</option>
+                </select>
+              </div>
+              <div>
+                <label for="visit-status" class="block text-xs font-medium text-slate-600 mb-1">สถานะสุขภาพ / ผลการเยี่ยม</label>
+                <select id="visit-status" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                  <option value="ปกติ">ปกติ / อาการคงที่</option>
+                  <option value="ต้องเฝ้าระวัง">มีอาการต้องติดตามใกล้ชิด</option>
+                  <option value="ส่งต่อรพ.">จำเป็นต้องส่งต่อ รพ.สต. หรือ รพ.บ้านโป่ง</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label for="visit-notes" class="block text-sm font-semibold text-slate-700 mb-1">บันทึกกิจกรรมการดูแล และปัญหาที่พบ</label>
+            <textarea id="visit-notes" rows="3" placeholder="ระบุการให้คำแนะนำ, การตรวจรับประทานยา, แผลกดทับ หรือความต้องการการสนับสนุนเพิ่มเติม..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
+          </div>
+
+          <!-- 3 PHOTO SLOTS SECTION -->
+          <div class="border-t border-slate-200 pt-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center">
+                  <svg class="w-5 h-5 mr-1.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  ภาพถ่ายประกอบการเยี่ยมบ้าน (2-3 ภาพ)
+                </h3>
+                <p class="text-xs text-slate-500">สามารถถ่ายสดด้วยกล้องมือถือ หรือเลือกไฟล์ภาพจากเครื่อง และสามารถบันทึกก่อนแล้วอัปโหลดภาพทีหลังได้</p>
+              </div>
+              <span class="text-xs bg-amber-50 text-amber-700 font-medium px-2.5 py-1 rounded-md border border-amber-200">
+                รองรับบีบอัดอัตโนมัติ
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- Photo Slot 1 -->
+              <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 bg-slate-50/50 flex flex-col justify-between hover:border-teal-400 transition" id="photo-box-1">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-teal-800">รูปที่ 1: สภาพแวดล้อมที่อยู่อาศัย</span>
+                    <button type="button" id="btn-clear-photo-1" class="text-xs text-rose-500 hover:text-rose-700 hidden">ลบรูป</button>
+                  </div>
+                  <div id="preview-container-1" class="w-full h-36 bg-slate-200 rounded-lg flex items-center justify-center overflow-hidden relative mb-3">
+                    <div id="placeholder-1" class="text-center text-slate-400 p-2">
+                      <svg class="w-8 h-8 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" />
+                      </svg>
+                      <span class="text-xs">บ้าน/สุขาภิบาล/ที่นอน</span>
+                    </div>
+                    <img id="img-preview-1" class="hidden w-full h-full object-cover cursor-pointer" alt="รูปที่ 1">
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="cursor-pointer bg-teal-600 hover:bg-teal-700 text-white text-xs py-2 px-1 rounded-lg text-center flex items-center justify-center font-medium shadow-sm transition">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    </svg>
+                    ถ่ายสด (Camera)
+                    <input type="file" id="input-camera-1" accept="image/*" capture="environment" class="hidden">
+                  </label>
+                  <label class="cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs py-2 px-1 rounded-lg text-center flex items-center justify-center font-medium transition">
+                    <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    เลือกภาพ (คลัง)
+                    <input type="file" id="input-file-1" accept="image/*" class="hidden">
+                  </label>
+                </div>
+              </div>
+
+              <!-- Photo Slot 2 -->
+              <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 bg-slate-50/50 flex flex-col justify-between hover:border-teal-400 transition" id="photo-box-2">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-teal-800">รูปที่ 2: อาการ / แผล / ยา</span>
+                    <button type="button" id="btn-clear-photo-2" class="text-xs text-rose-500 hover:text-rose-700 hidden">ลบรูป</button>
+                  </div>
+                  <div id="preview-container-2" class="w-full h-36 bg-slate-200 rounded-lg flex items-center justify-center overflow-hidden relative mb-3">
+                    <div id="placeholder-2" class="text-center text-slate-400 p-2">
+                      <svg class="w-8 h-8 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                      </svg>
+                      <span class="text-xs">แผลกดทับ/ตลับยา/ร่างกาย</span>
+                    </div>
+                    <img id="img-preview-2" class="hidden w-full h-full object-cover cursor-pointer" alt="รูปที่ 2">
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="cursor-pointer bg-teal-600 hover:bg-teal-700 text-white text-xs py-2 px-1 rounded-lg text-center flex items-center justify-center font-medium shadow-sm transition">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    </svg>
+                    ถ่ายสด (Camera)
+                    <input type="file" id="input-camera-2" accept="image/*" capture="environment" class="hidden">
+                  </label>
+                  <label class="cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs py-2 px-1 rounded-lg text-center flex items-center justify-center font-medium transition">
+                    <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    เลือกภาพ (คลัง)
+                    <input type="file" id="input-file-2" accept="image/*" class="hidden">
+                  </label>
+                </div>
+              </div>
+
+              <!-- Photo Slot 3 -->
+              <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 bg-slate-50/50 flex flex-col justify-between hover:border-teal-400 transition" id="photo-box-3">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-teal-800">รูปที่ 3: กิจกรรมขณะเข้าเยี่ยม</span>
+                    <button type="button" id="btn-clear-photo-3" class="text-xs text-rose-500 hover:text-rose-700 hidden">ลบรูป</button>
+                  </div>
+                  <div id="preview-container-3" class="w-full h-36 bg-slate-200 rounded-lg flex items-center justify-center overflow-hidden relative mb-3">
+                    <div id="placeholder-3" class="text-center text-slate-400 p-2">
+                      <svg class="w-8 h-8 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      <span class="text-xs">อสม./ผู้ดูแล/ให้คำปรึกษา</span>
+                    </div>
+                    <img id="img-preview-3" class="hidden w-full h-full object-cover cursor-pointer" alt="รูปที่ 3">
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="cursor-pointer bg-teal-600 hover:bg-teal-700 text-white text-xs py-2 px-1 rounded-lg text-center flex items-center justify-center font-medium shadow-sm transition">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    </svg>
+                    ถ่ายสด (Camera)
+                    <input type="file" id="input-camera-3" accept="image/*" capture="environment" class="hidden">
+                  </label>
+                  <label class="cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs py-2 px-1 rounded-lg text-center flex items-center justify-center font-medium transition">
+                    <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    เลือกภาพ (คลัง)
+                    <input type="file" id="input-file-3" accept="image/*" class="hidden">
+                  </label>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 italic text-center">* หมายเหตุ: สามารถเว้นว่างรูปภาพไว้ได้ หากยังไม่สะดวกถ่าย และมาเปิดกดเพิ่มภาพย้อนหลังได้ในแท็บรายงาน</p>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
+            <button type="button" id="btn-reset-visit-form" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition">ล้างข้อมูลฟอร์ม</button>
+            <button type="submit" id="btn-submit-visit" class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm shadow transition flex items-center">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              บันทึกการเยี่ยมบ้าน
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: REPORTS & STATISTICS -->
+    <section id="view-stats" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">รายงานสรุปผลและสถิติการเยี่ยมบ้าน</h2>
+          <p class="text-xs text-slate-500">ข้อมูลเชื่อมโยงจากฐานข้อมูล Firestore สำหรับประเมินผล วางแผน และส่งออกรายงานประจำเดือน</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-export-csv" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center shadow-sm">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            ส่งออกข้อมูลเป็น CSV (Excel)
+          </button>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800 text-sm">การกระจายตัวตามกลุ่มศักยภาพผู้ป่วย (ADL)</h3>
+            <span class="text-xs text-slate-400">สัดส่วนผู้ป่วย</span>
+          </div>
+          <div class="relative h-64">
+            <canvas id="chart-adl-distribution"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800 text-sm">จำนวนครั้งการเยี่ยมจำแนกตามหมู่บ้าน/ชุมชน</h3>
+            <span class="text-xs text-slate-400">ความครอบคลุม</span>
+          </div>
+          <div class="relative h-64">
+            <canvas id="chart-village-visits"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historical Visit Logs Table -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h3 class="font-bold text-slate-800 text-sm">ประวัติการเยี่ยมบ้านทั้งหมด (แสดงภาพถ่ายประกอบ)</h3>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs text-slate-500">กรองตามผล:</span>
+            <select id="table-filter-status" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white">
+              <option value="ALL">ทั้งหมด</option>
+              <option value="ปกติ">ปกติ</option>
+              <option value="ต้องเฝ้าระวัง">ต้องเฝ้าระวัง</option>
+              <option value="ส่งต่อรพ.">ส่งต่อ รพ.</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">วันที่/เวลา</th>
+                <th class="px-4 py-3">ชื่อผู้ป่วย / หมู่บ้าน</th>
+                <th class="px-4 py-3">สัญญาณชีพ (BP/DTX)</th>
+                <th class="px-4 py-3">ผลการประเมิน</th>
+                <th class="px-4 py-3 text-center">ภาพถ่ายประกอบ (2-3 รูป)</th>
+                <th class="px-4 py-3 text-right">การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="table-visit-logs-body" class="divide-y divide-slate-100">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: DATABASE SCHEMA & CONFIGURATION -->
+    <section id="view-schema" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">โครงสร้างฐานข้อมูล Firebase Firestore สำหรับทำรายงาน/สถิติ</h2>
+          <p class="text-xs text-slate-500">สคีมาข้อมูลออกแบบให้ดึงไปต่อยอดทำ Data Studio, Power BI, หรือ API ส่งต่อไปยัง สสอ. / รพ.สต. ได้โดยตรง</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+              <span class="font-bold text-teal-800 text-sm">Collection: <code>patients</code></span>
+              <span class="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded">ข้อมูลผู้ป่วย</span>
+            </div>
+            <pre class="text-xs text-slate-700 bg-white p-3 rounded border border-slate-200 overflow-x-auto font-mono leading-relaxed">
+{
+  id: "pt_001",
+  fullName: "นายมี สมบูรณ์",
+  cid: "1709900123456",
+  age: 72,
+  gender: "ชาย",
+  village: "หมู่ 1 บ้านโป่ง",
+  address: "12/4 ต.บ้านโป่ง",
+  phone: "081-234-5678",
+  adlGroup: "ติดเตียง",
+  adlScore: 3,
+  chronicDiseases: ["HT", "Stroke"],
+  caregiverName: "นางสมศรี (บุตรสาว)",
+  caregiverPhone: "089-876-5432",
+  createdAt: "2026-11-03T09:00:00Z"
+}
+            </pre>
+          </div>
+
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+              <span class="font-bold text-emerald-800 text-sm">Collection: <code>visit_logs</code></span>
+              <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">บันทึกการเยี่ยม</span>
+            </div>
+            <pre class="text-xs text-slate-700 bg-white p-3 rounded border border-slate-200 overflow-x-auto font-mono leading-relaxed">
+{
+  id: "vlog_101",
+  patientId: "pt_001",
+  patientName: "นายมี สมบูรณ์",
+  village: "หมู่ 1 บ้านโป่ง",
+  visitDate: "2026-11-03T10:00:00Z",
+  visitorName: "อสม. มาลี ใจดี",
+  vitalSigns: {
+    bp: "135/85",
+    pulse: 76,
+    dtx: 128
+  },
+  adlGroup: "ติดเตียง",
+  status: "ต้องเฝ้าระวัง",
+  notes: "แผลกดทับบริเวณสะโพกแห้งดี...",
+  photoUrls: [
+    "https://storage.googleapis.com/.../env_01.jpg",
+    "https://storage.googleapis.com/.../wound_01.jpg",
+    "https://storage.googleapis.com/.../activity_01.jpg"
+  ],
+  createdAt: "2026-11-03T10:15:00Z"
+}
+            </pre>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 pt-4">
+          <h3 class="font-bold text-slate-800 text-sm mb-2">กฎความปลอดภัย Firebase Storage (Rules)</h3>
+          <pre class="text-xs text-slate-700 bg-slate-900 text-emerald-300 p-3 rounded-lg overflow-x-auto font-mono">
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /visit_photos/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+          </pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: ADD / EDIT PATIENT -->
+  <dialog id="modal-patient" class="rounded-2xl p-0 w-full max-w-lg shadow-2xl backdrop:bg-slate-900/40">
+    <div class="bg-white">
+      <div class="bg-teal-700 text-white px-5 py-4 flex items-center justify-between">
+        <h3 class="font-bold text-base" id="modal-patient-title">ลงทะเบียนผู้ป่วยใหม่</h3>
+        <button type="button" id="btn-close-patient-modal" class="text-teal-200 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="form-patient" class="p-5 space-y-4" onsubmit="return false">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label for="pt-fullname" class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ - นามสกุล <span class="text-rose-500">*</span></label>
+            <input type="text" id="pt-fullname" required placeholder="เช่น นายทองดี มีสุข" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="pt-age" class="block text-xs font-semibold text-slate-700 mb-1">อายุ (ปี) <span class="text-rose-500">*</span></label>
+            <input type="number" id="pt-age" required placeholder="เช่น 68" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="pt-gender" class="block text-xs font-semibold text-slate-700 mb-1">เพศ</label>
+            <select id="pt-gender" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              <option value="ชาย">ชาย</option>
+              <option value="หญิง">หญิง</option>
+            </select>
+          </div>
+          <div>
+            <label for="pt-village" class="block text-xs font-semibold text-slate-700 mb-1">หมู่บ้าน / ชุมชน <span class="text-rose-500">*</span></label>
+            <select id="pt-village" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              <option value="หมู่ 1 บ้านโป่ง">หมู่ 1 บ้านโป่ง</option>
+              <option value="หมู่ 2 ท่าผา">หมู่ 2 ท่าผา</option>
+              <option value="หมู่ 3 หนองอ้อ">หมู่ 3 หนองอ้อ</option>
+              <option value="หมู่ 4 เบิกไพร">หมู่ 4 เบิกไพร</option>
+              <option value="หมู่ 5 ปากแรต">หมู่ 5 ปากแรต</option>
+            </select>
+          </div>
+          <div>
+            <label for="pt-phone" class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ติดต่อ</label>
+            <input type="text" id="pt-phone" placeholder="เช่น 081-xxx-xxxx" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label for="pt-address" class="block text-xs font-semibold text-slate-700 mb-1">ที่อยู่โดยละเอียด</label>
+            <input type="text" id="pt-address" placeholder="เช่น 123/45 ซอย 2 ต.บ้านโป่ง" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="pt-adl" class="block text-xs font-semibold text-slate-700 mb-1">กลุ่มศักยภาพ (ADL) <span class="text-rose-500">*</span></label>
+            <select id="pt-adl" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              <option value="ติดสังคม">ติดสังคม (ADL 12-20)</option>
+              <option value="ติดบ้าน">ติดบ้าน (ADL 5-11)</option>
+              <option value="ติดเตียง">ติดเตียง (ADL 0-4)</option>
+            </select>
+          </div>
+          <div>
+            <label for="pt-disease" class="block text-xs font-semibold text-slate-700 mb-1">โรคประจำตัวสำคัญ</label>
+            <input type="text" id="pt-disease" placeholder="เช่น HT, DM, อัมพฤกษ์" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+          <button type="button" id="btn-cancel-patient" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">ยกเลิก</button>
+          <button type="submit" id="btn-save-patient" class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition shadow-sm">บันทึกข้อมูลผู้ป่วย</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- MODAL: UPLOAD PHOTOS LATER -->
+  <dialog id="modal-upload-later" class="rounded-2xl p-0 w-full max-w-xl shadow-2xl backdrop:bg-slate-900/40">
+    <div class="bg-white">
+      <div class="bg-teal-700 text-white px-5 py-4 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-base">อัปโหลดภาพประกอบการเยี่ยมย้อนหลัง</h3>
+          <p class="text-xs text-teal-100" id="modal-upload-later-subtitle">การเยี่ยม: -</p>
+        </div>
+        <button type="button" id="btn-close-upload-later" class="text-teal-200 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <p class="text-xs text-slate-600">ท่านสามารถถ่ายภาพเพิ่มเติม หรือเลือกไฟล์ภาพ 2-3 ภาพเพื่อบันทึกเสริมเข้าประวัติการเยี่ยมรอบนี้:</p>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="border border-slate-200 rounded-lg p-2 bg-slate-50 text-center">
+            <p class="text-xs font-semibold text-slate-700 mb-1">ภาพที่ 1: สิ่งแวดล้อม</p>
+            <div id="later-prev-box-1" class="w-full h-24 bg-slate-200 rounded mb-2 overflow-hidden flex items-center justify-center">
+              <span class="text-xs text-slate-400">ยังไม่มีภาพ</span>
+            </div>
+            <label class="cursor-pointer bg-teal-600 hover:bg-teal-700 text-white text-[11px] py-1 px-2 rounded block font-medium">
+              เลือก/ถ่ายภาพ
+              <input type="file" id="later-file-1" accept="image/*" class="hidden">
+            </label>
+          </div>
+
+          <div class="border border-slate-200 rounded-lg p-2 bg-slate-50 text-center">
+            <p class="text-xs font-semibold text-slate-700 mb-1">ภาพที่ 2: อาการ/แผล</p>
+            <div id="later-prev-box-2" class="w-full h-24 bg-slate-200 rounded mb-2 overflow-hidden flex items-center justify-center">
+              <span class="text-xs text-slate-400">ยังไม่มีภาพ</span>
+            </div>
+            <label class="cursor-pointer bg-teal-600 hover:bg-teal-700 text-white text-[11px] py-1 px-2 rounded block font-medium">
+              เลือก/ถ่ายภาพ
+              <input type="file" id="later-file-2" accept="image/*" class="hidden">
+            </label>
+          </div>
+
+          <div class="border border-slate-200 rounded-lg p-2 bg-slate-50 text-center">
+            <p class="text-xs font-semibold text-slate-700 mb-1">ภาพที่ 3: กิจกรรม</p>
+            <div id="later-prev-box-3" class="w-full h-24 bg-slate-200 rounded mb-2 overflow-hidden flex items-center justify-center">
+              <span class="text-xs text-slate-400">ยังไม่มีภาพ</span>
+            </div>
+            <label class="cursor-pointer bg-teal-600 hover:bg-teal-700 text-white text-[11px] py-1 px-2 rounded block font-medium">
+              เลือก/ถ่ายภาพ
+              <input type="file" id="later-file-3" accept="image/*" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+          <button type="button" id="btn-cancel-later-photos" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">ปิด</button>
+          <button type="button" id="btn-save-later-photos" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">บันทึกรูปภาพเสริม</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL: IMAGE LIGHTBOX -->
+  <dialog id="modal-lightbox" class="rounded-2xl p-0 max-w-2xl w-full shadow-2xl backdrop:bg-slate-900/60">
+    <div class="bg-white">
+      <div class="flex items-center justify-between p-3 border-b border-slate-200">
+        <span class="text-sm font-bold text-slate-700" id="lightbox-title">ดูภาพถ่ายขนาดใหญ่</span>
+        <button type="button" id="btn-close-lightbox" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-4 flex items-center justify-center bg-slate-900 min-h-[300px]">
+        <img id="lightbox-img" class="max-h-[70vh] max-w-full rounded object-contain" alt="ภาพถ่ายขนาดใหญ่">
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- APPLICATION SCRIPT -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDVJ_-DgCd05-9Gw5COM_BlP-Cjz2t-ZJA",
+      authDomain: "banpong-care-connect.firebaseapp.com",
+      projectId: "banpong-care-connect",
+      storageBucket: "banpong-care-connect.firebasestorage.app",
+      messagingSenderId: "548461161591",
+      appId: "1:548461161591:web:4fb4f2e7adb982a564aa72",
+      measurementId: "G-V354KN2SJK"
+    };
+
+    let patients = [];
+    let visitLogs = [];
+    let currentPhotoSlots = [null, null, null];
+    let activeEditingVisitId = null;
+    let laterPhotoDrafts = [null, null, null];
+    let chartAdlInstance = null;
+    let chartVillageInstance = null;
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-teal-600' : (type === 'error' ? 'bg-rose-600' : 'bg-slate-700');
+      toast.className = `${bgColor} text-white text-sm px-4 py-3 rounded-xl shadow-lg pointer-events-auto flex items-center space-x-2 transition-all duration-300 transform translate-y-2 opacity-0`;
+      toast.innerHTML = `
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${type === 'success' ? 'M5 13l4 4L19 7' : 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'}" />
+        </svg>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function loadLocalData() {
+      try {
+        const p = localStorage.getItem('bp_patients');
+        const v = localStorage.getItem('bp_visit_logs');
+        if (p) patients = JSON.parse(p);
+        if (v) visitLogs = JSON.parse(v);
+      } catch (e) {
+        console.warn('LocalStorage load error', e);
+      }
+
+      if (!patients || patients.length === 0) {
+        patients = [
+          {
+            id: 'pt_' + Date.now() + '_1',
+            fullName: 'นายทองดี มีสุข',
+            age: 78,
+            gender: 'ชาย',
+            village: 'หมู่ 1 บ้านโป่ง',
+            address: '45/2 ถ.ริมน้ำ ต.บ้านโป่ง',
+            phone: '081-345-6789',
+            adlGroup: 'ติดเตียง',
+            adlScore: 3,
+            chronicDiseases: 'Stroke, HT',
+            createdAt: new Date(Date.now() - 86400000 * 10).toISOString()
+          },
+          {
+            id: 'pt_' + Date.now() + '_2',
+            fullName: 'นางบัวลอย สดใส',
+            age: 71,
+            gender: 'หญิง',
+            village: 'หมู่ 2 ท่าผา',
+            address: '112 หมู่ 2 ต.ท่าผา',
+            phone: '089-123-4567',
+            adlGroup: 'ติดบ้าน',
+            adlScore: 8,
+            chronicDiseases: 'เบาหวาน (DM), ไตวายเรื้อรัง (CKD)',
+            createdAt: new Date(Date.now() - 86400000 * 7).toISOString()
+          },
+          {
+            id: 'pt_' + Date.now() + '_3',
+            fullName: 'นายสมพร ปากแรต',
+            age: 65,
+            gender: 'ชาย',
+            village: 'หมู่ 5 ปากแรต',
+            address: '88/1 ม.5 ต.ปากแรต',
+            phone: '086-789-0123',
+            adlGroup: 'ติดสังคม',
+            adlScore: 18,
+            chronicDiseases: 'HT ควบคุมได้ดี',
+            createdAt: new Date(Date.now() - 86400000 * 3).toISOString()
+          }
+        ];
+        savePatientsLocal();
+      }
+
+      if (!visitLogs || visitLogs.length === 0) {
+        visitLogs = [
+          {
+            id: 'vl_' + Date.now() + '_1',
+            patientId: patients[0].id,
+            patientName: patients[0].fullName,
+            village: patients[0].village,
+            visitDate: new Date(Date.now() - 86400000 * 2).toISOString().slice(0, 16),
+            visitorName: 'อสม. สมศรี / พยาบาล รพ.สต.',
+            bp: '138/85',
+            pulse: 76,
+            dtx: 132,
+            adlGroup: 'ติดเตียง',
+            status: 'ต้องเฝ้าระวัง',
+            notes: 'พลิกตัวทุก 2 ชม. แผลกดทับที่ก้นกบขนาด 1 ซม. แห้งดี ญาติให้ความร่วมมือดี',
+            photoUrls: [
+              'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80',
+              'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80'
+            ],
+            createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+          }
+        ];
+        saveVisitsLocal();
+      }
+    }
+
+    function savePatientsLocal() {
+      try {
+        localStorage.setItem('bp_patients', JSON.stringify(patients));
+      } catch (e) { console.error(e); }
+    }
+
+    function saveVisitsLocal() {
+      try {
+        localStorage.setItem('bp_visit_logs', JSON.stringify(visitLogs));
+      } catch (e) { console.error(e); }
+    }
+
+    function compressImageFile(file, maxWidth = 900, maxHeight = 900, quality = 0.75) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width;
+            let h = img.height;
+            if (w > h) {
+              if (w > maxWidth) {
+                h = Math.round((h * maxWidth) / w);
+                w = maxWidth;
+              }
+            } else {
+              if (h > maxHeight) {
+                w = Math.round((w * maxHeight) / h);
+                h = maxHeight;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+      });
+    }
+
+    const tabs = {
+      dashboard: { btn: document.getElementById('nav-dashboard'), view: document.getElementById('view-dashboard') },
+      visit: { btn: document.getElementById('nav-visit'), view: document.getElementById('view-visit-form') },
+      stats: { btn: document.getElementById('nav-stats'), view: document.getElementById('view-stats') },
+      schema: { btn: document.getElementById('nav-schema'), view: document.getElementById('view-schema') }
+    };
+
+    function switchTab(target) {
+      Object.keys(tabs).forEach(k => {
+        if (k === target) {
+          tabs[k].view.classList.remove('hidden');
+          tabs[k].btn.classList.add('tab-active', 'text-white');
+          tabs[k].btn.classList.remove('border-transparent', 'text-teal-100');
+        } else {
+          tabs[k].view.classList.add('hidden');
+          tabs[k].btn.classList.remove('tab-active', 'text-white');
+          tabs[k].btn.classList.add('border-transparent', 'text-teal-100');
+        }
+      });
+      if (target === 'stats') {
+        renderCharts();
+        renderVisitLogsTable();
+      }
+    }
+
+    tabs.dashboard.btn.addEventListener('click', () => switchTab('dashboard'));
+    tabs.visit.btn.addEventListener('click', () => switchTab('visit'));
+    tabs.stats.btn.addEventListener('click', () => switchTab('stats'));
+    tabs.schema.btn.addEventListener('click', () => switchTab('schema'));
+
+    function renderPatientCards() {
+      const container = document.getElementById('patient-card-container');
+      const searchVal = document.getElementById('filter-search').value.toLowerCase().trim();
+      const adlVal = document.getElementById('filter-adl').value;
+      const villageVal = document.getElementById('filter-village').value;
+
+      const filtered = patients.filter(p => {
+        const matchSearch = p.fullName.toLowerCase().includes(searchVal) ||
+                            p.village.toLowerCase().includes(searchVal) ||
+                            (p.chronicDiseases && p.chronicDiseases.toLowerCase().includes(searchVal));
+        const matchAdl = (adlVal === 'ALL') || (p.adlGroup === adlVal);
+        const matchVillage = (villageVal === 'ALL') || (p.village === villageVal);
+        return matchSearch && matchAdl && matchVillage;
+      });
+
+      document.getElementById('stat-total-patients').textContent = patients.length;
+      document.getElementById('stat-total-visits').textContent = visitLogs.length;
+      document.getElementById('stat-bedridden-count').textContent = patients.filter(p => p.adlGroup === 'ติดเตียง').length;
+      const visitsWithPhotos = visitLogs.filter(v => v.photoUrls && v.photoUrls.length > 0).length;
+      document.getElementById('stat-visits-with-photos').textContent = visitsWithPhotos;
+
+      const select = document.getElementById('visit-patient-select');
+      const currentSelected = select.value;
+      select.innerHTML = '<option value="">-- กรุณาเลือกผู้ป่วย --</option>';
+      patients.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.fullName} (${p.village}) - ${p.adlGroup}`;
+        select.appendChild(opt);
+      });
+      select.value = currentSelected;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-12 text-center bg-white rounded-xl border border-slate-200">
+            <svg class="w-12 h-12 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <p class="text-sm font-medium text-slate-500">ไม่พบข้อมูลผู้ป่วยตามเงื่อนไขที่เลือก</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => {
+        const pVisits = visitLogs.filter(v => v.patientId === p.id);
+        const lastVisit = pVisits.length > 0 ? pVisits[0] : null;
+        let badgeClass = 'badge-adl-social';
+        if (p.adlGroup === 'ติดบ้าน') badgeClass = 'badge-adl-home';
+        if (p.adlGroup === 'ติดเตียง') badgeClass = 'badge-adl-bed';
+
+        return `
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow transition p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <h4 class="font-bold text-slate-800 text-base">${p.fullName}</h4>
+                  <p class="text-xs text-slate-500">อายุ ${p.age} ปี | ${p.gender}</p>
+                </div>
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${badgeClass}">${p.adlGroup}</span>
+              </div>
+
+              <div class="space-y-1.5 text-xs text-slate-600 mb-4 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                <div class="flex items-center">
+                  <svg class="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>${p.village}</span>
+                </div>
+                <div class="flex items-center">
+                  <svg class="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>โรคประจำตัว: <strong class="text-slate-700">${p.chronicDiseases || '-'}</strong></span>
+                </div>
+              </div>
+
+              <div class="text-xs text-slate-500 border-t border-slate-100 pt-2 mb-4 flex items-center justify-between">
+                <span>ได้รับการเยี่ยม: <strong>${pVisits.length} ครั้ง</strong></span>
+                <span>${lastVisit ? 'ล่าสุด: ' + lastVisit.visitDate.replace('T', ' ') : 'ยังไม่เคยเยี่ยม'}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2 pt-2 border-t border-slate-100">
+              <button onclick="startVisitForPatient('${p.id}')" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium py-2 px-3 rounded-lg text-center transition flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                บันทึกการเยี่ยม
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.startVisitForPatient = function(patientId) {
+      document.getElementById('visit-patient-select').value = patientId;
+      switchTab('visit');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    document.getElementById('filter-search').addEventListener('input', renderPatientCards);
+    document.getElementById('filter-adl').addEventListener('change', renderPatientCards);
+    document.getElementById('filter-village').addEventListener('change', renderPatientCards);
+
+    const modalPatient = document.getElementById('modal-patient');
+    document.getElementById('btn-open-patient-modal').addEventListener('click', () => {
+      document.getElementById('form-patient').reset();
+      modalPatient.showModal();
+    });
+    document.getElementById('btn-quick-new-patient').addEventListener('click', () => {
+      document.getElementById('form-patient').reset();
+      modalPatient.showModal();
+    });
+    document.getElementById('btn-close-patient-modal').addEventListener('click', () => modalPatient.close());
+    document.getElementById('btn-cancel-patient').addEventListener('click', () => modalPatient.close());
+
+    document.getElementById('form-patient').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fullName = document.getElementById('pt-fullname').value.trim();
+      const age = parseInt(document.getElementById('pt-age').value, 10);
+      const gender = document.getElementById('pt-gender').value;
+      const village = document.getElementById('pt-village').value;
+      const phone = document.getElementById('pt-phone').value.trim();
+      const address = document.getElementById('pt-address').value.trim();
+      const adlGroup = document.getElementById('pt-adl').value;
+      const chronicDiseases = document.getElementById('pt-disease').value.trim();
+
+      if (!fullName || isNaN(age)) {
+        showToast('กรุณากรอกชื่อและอายุผู้ป่วยให้ครบถ้วน', 'error');
+        return;
+      }
+
+      const newPatient = {
+        id: 'pt_' + Date.now(),
+        fullName,
+        age,
+        gender,
+        village,
+        phone,
+        address,
+        adlGroup,
+        chronicDiseases,
+        createdAt: new Date().toISOString()
+      };
+
+      patients.unshift(newPatient);
+      savePatientsLocal();
+      renderPatientCards();
+      modalPatient.close();
+      showToast(`เพิ่มผู้ป่วย "${fullName}" เรียบร้อยแล้ว`);
+    });
+
+    function resetVisitDateTime() {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('visit-date').value = now.toISOString().slice(0, 16);
+    }
+    resetVisitDateTime();
+
+    [1, 2, 3].forEach(slotIdx => {
+      const cameraInput = document.getElementById(`input-camera-${slotIdx}`);
+      const fileInput = document.getElementById(`input-file-${slotIdx}`);
+      const imgPreview = document.getElementById(`img-preview-${slotIdx}`);
+      const placeholder = document.getElementById(`placeholder-${slotIdx}`);
+      const clearBtn = document.getElementById(`btn-clear-photo-${slotIdx}`);
+
+      const handleImage = async (file) => {
+        if (!file) return;
+        try {
+          const compressed = await compressImageFile(file);
+          currentPhotoSlots[slotIdx - 1] = compressed;
+          imgPreview.src = compressed;
+          imgPreview.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+          clearBtn.classList.remove('hidden');
+          showToast(`ประมวลผลรูปที่ ${slotIdx} เรียบร้อย (พร้อมบันทึก)`);
+        } catch (err) {
+          console.error('Image compression error', err);
+          showToast('ไม่สามารถประมวลผลรูปภาพได้', 'error');
+        }
+      };
+
+      cameraInput.addEventListener('change', (e) => handleImage(e.target.files[0]));
+      fileInput.addEventListener('change', (e) => handleImage(e.target.files[0]));
+
+      clearBtn.addEventListener('click', () => {
+        currentPhotoSlots[slotIdx - 1] = null;
+        imgPreview.src = '';
+        imgPreview.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        clearBtn.classList.add('hidden');
+        cameraInput.value = '';
+        fileInput.value = '';
+      });
+
+      imgPreview.addEventListener('click', () => {
+        if (currentPhotoSlots[slotIdx - 1]) {
+          openLightbox(currentPhotoSlots[slotIdx - 1], `รูปที่ ${slotIdx} - บันทึกการเยี่ยม`);
+        }
+      });
+    });
+
+    document.getElementById('btn-reset-visit-form').addEventListener('click', () => {
+      document.getElementById('form-visit-record').reset();
+      resetVisitDateTime();
+      [1, 2, 3].forEach(slotIdx => {
+        currentPhotoSlots[slotIdx - 1] = null;
+        document.getElementById(`img-preview-${slotIdx}`).src = '';
+        document.getElementById(`img-preview-${slotIdx}`).classList.add('hidden');
+        document.getElementById(`placeholder-${slotIdx}`).classList.remove('hidden');
+        document.getElementById(`btn-clear-photo-${slotIdx}`).classList.add('hidden');
+      });
+    });
+
+    document.getElementById('btn-submit-visit').addEventListener('click', () => {
+      const patientId = document.getElementById('visit-patient-select').value;
+      const visitDate = document.getElementById('visit-date').value;
+      const visitorName = document.getElementById('visit-visitor-name').value.trim() || 'อสม. บ้านโป่ง';
+      const bp = document.getElementById('visit-bp').value.trim();
+      const pulse = document.getElementById('visit-pulse').value.trim();
+      const dtx = document.getElementById('visit-dtx').value.trim();
+      const adlGroup = document.getElementById('visit-adl').value;
+      const status = document.getElementById('visit-status').value;
+      const notes = document.getElementById('visit-notes').value.trim();
+
+      if (!patientId) {
+        showToast('กรุณาเลือกผู้ป่วยที่ได้รับการเยี่ยม', 'error');
+        document.getElementById('visit-patient-select').focus();
+        return;
+      }
+      if (!visitDate) {
+        showToast('กรุณาระบุวันและเวลาเยี่ยม', 'error');
+        return;
+      }
+
+      const patient = patients.find(p => p.id === patientId);
+      const validPhotos = currentPhotoSlots.filter(p => p !== null);
+
+      const newLog = {
+        id: 'vl_' + Date.now(),
+        patientId,
+        patientName: patient ? patient.fullName : 'ไม่ระบุชื่อ',
+        village: patient ? patient.village : '-',
+        visitDate,
+        visitorName,
+        bp: bp || '-',
+        pulse: pulse ? parseInt(pulse, 10) : '-',
+        dtx: dtx ? parseInt(dtx, 10) : '-',
+        adlGroup,
+        status,
+        notes: notes || '-',
+        photoUrls: validPhotos,
+        createdAt: new Date().toISOString()
+      };
+
+      visitLogs.unshift(newLog);
+      saveVisitsLocal();
+
+      if (patient && patient.adlGroup !== adlGroup) {
+        patient.adlGroup = adlGroup;
+        savePatientsLocal();
+      }
+
+      showToast(`บันทึกการเยี่ยมของ "${newLog.patientName}" สำเร็จ! (${validPhotos.length} รูป)`);
+      document.getElementById('btn-reset-visit-form').click();
+      renderPatientCards();
+      switchTab('stats');
+    });
+
+    function renderCharts() {
+      const counts = { 'ติดสังคม': 0, 'ติดบ้าน': 0, 'ติดเตียง': 0 };
+      patients.forEach(p => {
+        if (counts[p.adlGroup] !== undefined) counts[p.adlGroup]++;
+      });
+
+      const ctxAdl = document.getElementById('chart-adl-distribution').getContext('2d');
+      if (chartAdlInstance) chartAdlInstance.destroy();
+      chartAdlInstance = new Chart(ctxAdl, {
+        type: 'doughnut',
+        data: {
+          labels: ['ติดสังคม (ช่วยเหลือตนเองได้)', 'ติดบ้าน (ช่วยเหลือบางส่วน)', 'ติดเตียง (พึ่งพาเต็มที่)'],
+          datasets: [{
+            data: [counts['ติดสังคม'], counts['ติดบ้าน'], counts['ติดเตียง']],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Sarabun' } } }
+          }
+        }
+      });
+
+      const villageCounts = {};
+      visitLogs.forEach(v => {
+        const vlg = v.village || 'อื่นๆ';
+        villageCounts[vlg] = (villageCounts[vlg] || 0) + 1;
+      });
+
+      const ctxVillage = document.getElementById('chart-village-visits').getContext('2d');
+      if (chartVillageInstance) chartVillageInstance.destroy();
+      chartVillageInstance = new Chart(ctxVillage, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(villageCounts),
+          datasets: [{
+            label: 'จำนวนครั้งที่เยี่ยม (ครั้ง)',
+            data: Object.values(villageCounts),
+            backgroundColor: '#0d9488',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0, font: { family: 'Sarabun' } } },
+            x: { ticks: { font: { family: 'Sarabun' } } }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    function renderVisitLogsTable() {
+      const tbody = document.getElementById('table-visit-logs-body');
+      const filterStatus = document.getElementById('table-filter-status').value;
+
+      const filtered = visitLogs.filter(v => {
+        return (filterStatus === 'ALL') || (v.status === filterStatus);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-4 py-8 text-center text-slate-400">ยังไม่มีบันทึกการเยี่ยมบ้านตามเงื่อนไขที่เลือก</td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(v => {
+        let statusBadge = '<span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">ปกติ</span>';
+        if (v.status === 'ต้องเฝ้าระวัง') {
+          statusBadge = '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">ต้องเฝ้าระวัง</span>';
+        } else if (v.status === 'ส่งต่อรพ.') {
+          statusBadge = '<span class="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">ส่งต่อ รพ.</span>';
+        }
+
+        let photosHtml = '<span class="text-xs text-slate-400 italic">ไม่มีรูป</span>';
+        if (v.photoUrls && v.photoUrls.length > 0) {
+          photosHtml = `
+            <div class="flex items-center justify-center space-x-1">
+              ${v.photoUrls.map((url, i) => `
+                <img src="${url}" onclick="openLightbox('${url}', 'ภาพประกอบที่ ${i+1} (${v.patientName})')" class="w-10 h-10 object-cover rounded-lg border border-slate-200 cursor-pointer hover:scale-105 transition" title="กดดูรูปใหญ่">
+              `).join('')}
+            </div>
+          `;
+        }
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="px-4 py-3 whitespace-nowrap text-xs text-slate-700 font-medium">
+              ${v.visitDate.replace('T', ' ')}
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-bold text-slate-800 text-sm">${v.patientName}</div>
+              <div class="text-xs text-slate-500">${v.village}</div>
+            </td>
+            <td class="px-4 py-3 text-xs">
+              <div>BP: <strong>${v.bp}</strong></div>
+              <div>DTX: <strong>${v.dtx}</strong></div>
+            </td>
+            <td class="px-4 py-3">
+              ${statusBadge}
+              <div class="text-[11px] text-slate-500 mt-1">${v.adlGroup}</div>
+            </td>
+            <td class="px-4 py-3 text-center">
+              ${photosHtml}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <button onclick="openUploadLaterModal('${v.id}')" class="text-xs text-teal-600 hover:text-teal-800 font-medium bg-teal-50 hover:bg-teal-100 px-2.5 py-1.5 rounded-lg border border-teal-200 transition">
+                + เพิ่ม/แก้รูป
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('table-filter-status').addEventListener('change', renderVisitLogsTable);
+
+    const modalUploadLater = document.getElementById('modal-upload-later');
+
+    window.openUploadLaterModal = function(visitId) {
+      activeEditingVisitId = visitId;
+      const visit = visitLogs.find(v => v.id === visitId);
+      if (!visit) return;
+
+      document.getElementById('modal-upload-later-subtitle').textContent = `ผู้ป่วย: ${visit.patientName} | วันที่: ${visit.visitDate.replace('T', ' ')}`;
+      laterPhotoDrafts = [null, null, null];
+
+      [0, 1, 2].forEach(i => {
+        const box = document.getElementById(`later-prev-box-${i+1}`);
+        if (visit.photoUrls && visit.photoUrls[i]) {
+          laterPhotoDrafts[i] = visit.photoUrls[i];
+          box.innerHTML = `<img src="${visit.photoUrls[i]}" class="w-full h-full object-cover">`;
+        } else {
+          box.innerHTML = `<span class="text-xs text-slate-400">ยังไม่มีภาพ</span>`;
+        }
+      });
+
+      modalUploadLater.showModal();
+    };
+
+    [1, 2, 3].forEach(slotIdx => {
+      document.getElementById(`later-file-${slotIdx}`).addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const compressed = await compressImageFile(file);
+          laterPhotoDrafts[slotIdx - 1] = compressed;
+          const box = document.getElementById(`later-prev-box-${slotIdx}`);
+          box.innerHTML = `<img src="${compressed}" class="w-full h-full object-cover">`;
+          showToast(`เตรียมรูปที่ ${slotIdx} สำเร็จ`);
+        } catch (err) {
+          console.error(err);
+          showToast('ไม่สามารถโหลดภาพได้', 'error');
+        }
+      });
+    });
+
+    document.getElementById('btn-close-upload-later').addEventListener('click', () => modalUploadLater.close());
+    document.getElementById('btn-cancel-later-photos').addEventListener('click', () => modalUploadLater.close());
+
+    document.getElementById('btn-save-later-photos').addEventListener('click', () => {
+      const visit = visitLogs.find(v => v.id === activeEditingVisitId);
+      if (visit) {
+        visit.photoUrls = laterPhotoDrafts.filter(p => p !== null);
+        saveVisitsLocal();
+        showToast('อัปเดตภาพถ่ายประกอบการเยี่ยมเรียบร้อยแล้ว');
+        modalUploadLater.close();
+        renderVisitLogsTable();
+        renderPatientCards();
+      }
+    });
+
+    const modalLightbox = document.getElementById('modal-lightbox');
+    window.openLightbox = function(url, title) {
+      document.getElementById('lightbox-title').textContent = title || 'ภาพถ่ายประกอบ';
+      document.getElementById('lightbox-img').src = url;
+      modalLightbox.showModal();
+    };
+    document.getElementById('btn-close-lightbox').addEventListener('click', () => modalLightbox.close());
+
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+      if (visitLogs.length === 0) {
+        showToast('ยังไม่มีข้อมูลการเยี่ยมบ้านสำหรับส่งออก', 'error');
+        return;
+      }
+
+      const headers = [
+        'รหัสการเยี่ยม (ID)',
+        'วันที่และเวลาเยี่ยม',
+        'ชื่อผู้ป่วย',
+        'หมู่บ้าน/ชุมชน',
+        'ผู้บันทึก/อสม.',
+        'ความดันโลหิต (BP)',
+        'ชีพจร (Pulse)',
+        'น้ำตาลปลายนิ้ว (DTX)',
+        'ระดับ ADL',
+        'สถานะผลการตรวจ',
+        'จำนวนภาพถ่าย',
+        'บันทึกอาการและปัญหา'
+      ];
+
+      const rows = visitLogs.map(v => [
+        `"${v.id}"`,
+        `"${v.visitDate}"`,
+        `"${v.patientName}"`,
+        `"${v.village}"`,
+        `"${v.visitorName}"`,
+        `"${v.bp}"`,
+        `"${v.pulse}"`,
+        `"${v.dtx}"`,
+        `"${v.adlGroup}"`,
+        `"${v.status}"`,
+        `"${v.photoUrls ? v.photoUrls.length : 0}"`,
+        `"${(v.notes || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `banpong_home_visits_report_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('ดาวน์โหลดรายงาน CSV สำเร็จ (พร้อมเปิดใน Excel)');
+    });
+
+    loadLocalData();
+    renderPatientCards();
+  </script>
+</body>
+</html>
